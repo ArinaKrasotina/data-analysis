@@ -1,127 +1,87 @@
-# Auto-n-deploy: Retail Data Pipeline
+# Retail Sales Automation (Python)
 
-Проект для автоматизации обработки данных продаж торговой сети.
+Учебный проект по автоматизации обработки кассовых CSV-выгрузок и загрузки данных в PostgreSQL.
+
+## Описание
+
+Проект эмулирует работу кассового ПО в торговой сети:
+- ежедневно (кроме воскресенья) генерируются CSV-файлы с продажами;
+- данные автоматически загружаются в базу данных PostgreSQL;
+- лишние файлы в папке игнорируются;
+- после загрузки файлы удаляются.
 
 ## Структура проекта
 
 ```
-auto-n-deploy/
-├── generate-data.py          # Генератор CSV файлов (Пн–Сб)
-├── load-to-db.py             # Загрузчик в PostgreSQL
-├── postgredb.py              # Класс для работы с БД
-├── config.ini                # Конфигурация подключения
-├── requirements.txt          # Зависимости Python
-├── README.md                 # Документация проекта
-├── data/                     # CSV файлы
-│   └── {shop}_{cash}.csv     # Пример: 1_1.csv, 2_3.csv
+automatization/
+├── generate-data.py
+├── load-to-db.py
+├── postgredb.py
+├── config.ini
+├── requirements.txt
+├── start.bat
+├── data/
 ├── sql/
-│   └── create-table.sql      # DDL таблицы sales
-└── img/                      # Скриншоты отчётов
+│   └── create-tables.sql
+├── img/
+└── README.md
 ```
 
-## Быстрая установка
+## Формат данных (CSV)
 
-### 1. Установка PostgreSQL и создание БД
-
-```bash
-psql -U postgres -c "CREATE DATABASE retail;"
+Имя файла:
+```
+{shop_num}_{cash_num}.csv
 ```
 
-### 2. Настройка проекта
+Поля:
+- doc_id
+- item
+- category
+- amount
+- price
+- discount
+- sale_date
+
+## Требования
+
+- Python 3.10+
+- PostgreSQL
+
+## Установка и запуск
 
 ```bash
-git clone <репозиторий>
-cd auto-n-deploy
+git clone <repo_url>
+cd automatization
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Настройка `config.ini`
-
-```ini
-[Database]
-HOST = localhost
-DATABASE = retail
-USER = postgres
-PASSWORD = ваш_пароль
+Создать таблицы:
+```sql
+sql/create-tables.sql
 ```
 
-### 4. Создание таблицы
-
+Запуск:
 ```bash
-psql -U postgres -d retail -f sql\create-table.sql
-```
-
-## Использование
-
-### Ручной запуск
-
-```bash
-# Генерация данных (только Пн–Сб)
 python generate-data.py
-
-# Загрузка данных в БД
 python load-to-db.py
 ```
 
-### Автоматизация (Планировщик заданий Windows)
-
-1. **Retail Data Generator** — ежедневно в 00:01 (Пн–Сб)
-2. **Retail Data Loader** — ежедневно в 00:06 (Пн–Сб)
-
-## Формат данных
-
-### CSV файлы
-
-- Имя файла: `{номер_магазина}_{номер_кассы}.csv`
-- Пример: `1_1.csv`, `2_3.csv`
-- Колонки:
-  - `doc_id`
-  - `item`
-  - `category`
-  - `amount`
-  - `price`
-  - `discount`
-  - `sale_date`
-
-### Таблица `sales`
-
-```sql
-CREATE TABLE sales (
-    id SERIAL PRIMARY KEY,
-    doc_id VARCHAR(32) NOT NULL,
-    item VARCHAR(255) NOT NULL,
-    category VARCHAR(255) NOT NULL,
-    amount INTEGER CHECK (amount > 0),
-    price NUMERIC(10,2) CHECK (price >= 0),
-    discount NUMERIC(10,2) CHECK (discount >= 0),
-    sale_date DATE NOT NULL,
-    CHECK (discount <= price * amount)
-);
+или:
+```bat
+start.bat
 ```
 
-## Проверка работы
+## Автоматизация
 
-```sql
-SELECT COUNT(*) FROM sales;
+Скрипты запускаются ежедневно (кроме воскресенья) через Windows Task Scheduler.
 
-SELECT sale_date, COUNT(*)
-FROM sales
-GROUP BY sale_date;
+## База данных
 
-SELECT COUNT(*)
-FROM sales
-WHERE discount > price * amount;
-```
+Используется PostgreSQL, таблица `sales` создаётся через DDL-скрипт.
 
-## Примечания
+## Назначение проекта
 
-- Данные генерируются за предыдущий день
-- Воскресенье — выходной день, данные не создаются
-- CSV файлы удаляются после успешной загрузки в БД
-- Обрабатываются только файлы, соответствующие шаблону `\d+_\d+\.csv`
-
----
-
-Проект готов к использованию. Для автоматизации используйте Планировщик заданий Windows.
+Итоговый учебный проект по автоматизации обработки данных на Python.
