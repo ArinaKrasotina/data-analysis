@@ -1,11 +1,5 @@
-@echo off
-
-REM Переходим в папку проекта
-cd /d "%~dp0"
-
-REM Активируем виртуальное окружение
-call venv\Scripts\activate
-
-REM Запуск
+#!/bin/bash
+cd "$(dirname "$0")"
+source venv/bin/activate
 python etl.py history
 python etl.py daily

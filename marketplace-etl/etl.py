@@ -1,14 +1,16 @@
 from datetime import datetime, timedelta
 from api_client import get_data_for_date
-from postgredb import PGDatabase
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-# подключение к БД
-db = PGDatabase(
+# Подключение к БД
+conn = psycopg2.connect(
     host="localhost",
-    database="retail",
-    user="postgres",
-    password="1234"
+    database="marketplace",
+    user="analyst",
+    password="password"
 )
+
 
 def clean_row(row):
     # фильтрация
@@ -44,32 +46,41 @@ def load_day(date):
     inserted = 0
     skipped = 0
 
-    for row in data:
-        cleaned = clean_row(row)
+    # используем курсор
+    with conn.cursor() as cur:
+        for row in data:
+            cleaned = clean_row(row)
 
-        if not cleaned:
-            skipped += 1
-            continue
+            if not cleaned:
+                skipped += 1
+                continue
 
-        query = """
-            INSERT INTO sales (
-                client_id, gender, product_id,
-                quantity, price_per_item,
-                discount_per_item, total_price,
-                purchase_datetime, purchase_time_seconds
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
+            query = """
+                INSERT INTO sales (
+                    client_id,
+                    gender,
+                    product_id,
+                    quantity,
+                    price_per_item,
+                    discount_per_item,
+                    total_price,
+                    purchase_datetime,
+                    purchase_time_seconds
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
 
-        db.post(query, cleaned)
-        inserted += 1
+            cur.execute(query, cleaned)
+            inserted += 1
 
+    conn.commit()
     print(f"Загружено: {inserted}, пропущено: {skipped}")
 
 
-# загрузка за вчера
-yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-load_day(yesterday)
+# Загрузка за вчера
+yesterday = (datetime.today()).date()
+load_day(yesterday.strftime("%Y-%m-%d"))
+
 
 def load_history(start_date, end_date):
     current = start_date
@@ -79,12 +90,11 @@ def load_history(start_date, end_date):
         current += timedelta(days=1)
 
 
-
 if __name__ == "__main__":
     import sys
 
     if sys.argv[1] == "daily":
-        load_day(yesterday)
+        load_day(yesterday.strftime("%Y-%m-%d"))
 
     elif sys.argv[1] == "history":
         load_history(
