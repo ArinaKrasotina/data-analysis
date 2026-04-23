@@ -1,14 +1,17 @@
 import psycopg2
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class PGDatabase:
-    def __init__(self, host, database, user, password, port=5432):
-        # Приводим всё к строке и чистим
+    def __init__(self, host=None, database=None, user=None, password=None, port=5432):
         params = {
-            'host': str(host).strip(),
-            'database': str(database).strip(),
-            'user': str(user).strip(),
-            'password': str(password).strip(),
-            'port': int(str(port).strip()) if str(port).strip() else 5432
+            'host': host or os.getenv("DB_HOST"),
+            'database': database or os.getenv("DB_NAME"),
+            'user': user or os.getenv("DB_USER"),
+            'password': password or os.getenv("DB_PASSWORD"),
+            'port': port or os.getenv("DB_PORT", 5432)
         }
         
         try:
@@ -26,5 +29,3 @@ class PGDatabase:
             return True
         except Exception:
             return False
-        
-
